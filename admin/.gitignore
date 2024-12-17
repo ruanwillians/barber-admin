@@ -14,7 +14,7 @@
 /build/
 
 # Arquivos de configuração do IntelliJ IDEA
-/.idea/
+.idea/
 
 # Arquivos de configuração do Eclipse
 /.project
