@@ -42,7 +42,6 @@ Thumbs.db
 
 # Arquivos de compilação de Docker
 .docker/
-Dockerfile
 
 # Arquivos gerados durante o teste
 /test-output/
