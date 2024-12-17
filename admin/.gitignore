@@ -1,0 +1,60 @@
+# Arquivos de build
+/target/
+/build/
+
+# Arquivos gerados pelo Maven
+/.mvn/
+/pom.xml.tag
+/pom.xml.releaseBackup
+/pom.xml.versionsBackup
+/repository/
+
+# Arquivos gerados pelo Gradle (se você estiver usando Gradle)
+.gradle/
+/build/
+
+# Arquivos de configuração do IntelliJ IDEA
+/.idea/
+
+# Arquivos de configuração do Eclipse
+/.project
+/.classpath
+/.settings/
+
+# Arquivos do NetBeans
+/nbproject/
+
+# Arquivos de configuração do Visual Studio Code
+.vscode/
+
+# Arquivos de dependências do Maven
+*.log
+
+# Arquivos temporários do sistema
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Arquivos de teste
+*.h2.db
+*.db
+
+# Arquivos de compilação de Docker
+.docker/
+Dockerfile
+
+# Arquivos gerados durante o teste
+/test-output/
+
+# Arquivos de gerenciamento de dependências
+*.iml
+
+# Arquivos de configuração do Spring Boot
+*.properties
+*.yml
+*.yaml
+
+# Outros arquivos específicos
+.idea/
+*.class
