@@ -3,7 +3,7 @@ name: CI/CD
 on:
   push:
     branches:
-      - 'main'
+      - "main"
 
 jobs:
   CI_CD:
@@ -16,8 +16,8 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Build the project using Maven
         run: mvn -f ./admin/pom.xml clean install -DskipTests
@@ -40,4 +40,15 @@ jobs:
           push: true
           file: ./admin/Dockerfile
           tags: ruanwill/barber-admin:${{ github.sha }}
-          platforms: linux/amd64,linux/arm64  # Adiciona suporte para múltiplas arquiteturas
+          platforms: linux/amd64,linux/arm64
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_CONTENT }}" > ~/.kube/config
+
+      - name: Update Deployment with new image
+        run: |
+          kubectl set image deployment/barber-admin-deployment \
+            barber-admin-container=ruanwill/barber-admin:${{ github.sha }} \
+            -n production
