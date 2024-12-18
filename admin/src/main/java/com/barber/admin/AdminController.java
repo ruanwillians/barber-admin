@@ -8,6 +8,6 @@ public class AdminController {
 
     @GetMapping("/admin")
     public String getAdminPage() {
-        return "health";
+        return "health api";
     }
 }
