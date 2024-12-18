@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class AdminController {
 
-    @GetMapping("/admin")
+    @GetMapping("/teste")
     public String getAdminPage() {
         return "health api";
     }
