@@ -56,12 +56,11 @@ jobs:
           echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
           echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" >> ~/.oci/config
           echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
-          echo "key_file=${{ secrets.OCI_PRIVATE_KEY_FILE }}" >> ~/.oci/config
 
-      - name: Configure kubectl
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_CONTENT }}" > ~/.kube/config
+          echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" > ~/.oci/private_key.pem
+
+          # Referenciar o arquivo no config
+          echo "key_file=~/.oci/private_key.pem" >> ~/.oci/config
 
       - name: Update Deployment with new image
         run: |
