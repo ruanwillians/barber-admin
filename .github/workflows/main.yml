@@ -31,7 +31,7 @@ jobs:
       - name: Set up Docker Buildx
         run: |
           docker buildx create --use
-          docker buildx inspect --bootstrap  # Certifique-se de que o Buildx está configurado corretamente
+          docker buildx inspect --bootstrap
 
       - name: Build Docker image for multiple architectures
         uses: docker/build-push-action@v5
@@ -41,6 +41,22 @@ jobs:
           file: ./admin/Dockerfile
           tags: ruanwill/barber-admin:${{ github.sha }}
           platforms: linux/amd64,linux/arm64
+
+      - name: Install OCI CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install oci-cli
+
+      - name: Configure OCI CLI
+        run: |
+          mkdir -p ~/.oci
+          echo "[DEFAULT]
+          user=${{ secrets.OCI_USER_OCID }}
+          fingerprint=${{ secrets.OCI_FINGERPRINT }}
+          tenancy=${{ secrets.OCI_TENANCY_OCID }}
+          region=${{ secrets.OCI_REGION }}
+          key_file=${{ secrets.OCI_PRIVATE_KEY_FILE }}
 
       - name: Configure kubectl
         run: |
