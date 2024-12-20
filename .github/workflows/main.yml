@@ -50,7 +50,8 @@ jobs:
 
       - name: Set up OCI Private Key from Secret
         run: |
-          echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/private_key.pem
+          mkdir -p ~/.oci  
+          echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" > ~/.oci/private_key.pem
           chmod 600 ~/.oci/private_key.pem
 
       - name: Configure OCI CLI
@@ -61,7 +62,7 @@ jobs:
           echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
           echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" >> ~/.oci/config
           echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
-          echo "key_file=${{ github.workspace }}/.oci/private_key.pem" >> ~/.oci/config
+          echo "key_file=~/.oci/private_key.pem" >> ~/.oci/config
 
       - name: Configure kubectl
         run: |
