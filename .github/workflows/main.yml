@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD
 
 on:
   push:
@@ -6,8 +6,7 @@ on:
       - "main"
 
 jobs:
-  ci:
-    name: Continuous Integration
+  CI_CD:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,7 +25,7 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_HUB_USER }}
+          username: ${{ secrets.DOCKER_HUB_USER}}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Set up Docker Buildx
@@ -43,21 +42,6 @@ jobs:
           tags: ruanwill/barber-admin:${{ github.sha }}
           platforms: linux/amd64,linux/arm64
 
-  cd:
-    name: Continuous Deployment
-    runs-on: ubuntu-latest
-    needs: ci # O CD só será executado após o CI
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install kubectl
-        run: |
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin/
-
       - name: Install OCI CLI
         run: |
           sudo apt-get update
@@ -72,21 +56,14 @@ jobs:
           echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
           echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" >> ~/.oci/config
           echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
+          echo "key_file=${{ secrets.OCI_PRIVATE_KEY_FILE }}" >> ~/.oci/config
 
-          echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" > ~/.oci/private_key.pem
-          echo "key_file=~/.oci/private_key.pem" >> ~/.oci/config
-
-      - name: Create Kubeconfig for OKE
+      - name: Configure kubectl
         run: |
-          oci ce cluster create-kubeconfig \
-            --cluster-id ${{ secrets.OKE_CLUSTER_OCID }} \
-            --file $HOME/.kube/config \
-            --region ${{ secrets.OCI_REGION }} \
-            --overwrite
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_CONTENT }}" > ~/.kube/config
 
       - name: Update Deployment with new image
-        env:
-          KUBECONFIG: $HOME/.kube/config
         run: |
           kubectl set image deployment/barber-admin-deployment \
             barber-admin-container=ruanwill/barber-admin:${{ github.sha }} \
