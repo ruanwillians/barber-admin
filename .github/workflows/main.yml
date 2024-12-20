@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI/CD Pipeline
 
 on:
   push:
@@ -6,7 +6,8 @@ on:
       - "main"
 
 jobs:
-  CI_CD:
+  ci:
+    name: Continuous Integration
     runs-on: ubuntu-latest
 
     steps:
@@ -25,7 +26,7 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_HUB_USER}}
+          username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Set up Docker Buildx
@@ -41,6 +42,21 @@ jobs:
           file: ./admin/Dockerfile
           tags: ruanwill/barber-admin:${{ github.sha }}
           platforms: linux/amd64,linux/arm64
+
+  cd:
+    name: Continuous Deployment
+    runs-on: ubuntu-latest
+    needs: ci # O CD só será executado após o CI
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
 
       - name: Install OCI CLI
         run: |
@@ -58,16 +74,19 @@ jobs:
           echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
 
           echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" > ~/.oci/private_key.pem
-
-          # Referenciar o arquivo no config
           echo "key_file=~/.oci/private_key.pem" >> ~/.oci/config
 
-      - name: Configure Kubectl
-        uses: oracle-actions/configure-kubectl-oke@v1.5.0
-        with:
-          cluster: ${{ secrets.OKE_CLUSTER_OCID }}
+      - name: Create Kubeconfig for OKE
+        run: |
+          oci ce cluster create-kubeconfig \
+            --cluster-id ${{ secrets.OKE_CLUSTER_OCID }} \
+            --file $HOME/.kube/config \
+            --region ${{ secrets.OCI_REGION }} \
+            --overwrite
 
       - name: Update Deployment with new image
+        env:
+          KUBECONFIG: $HOME/.kube/config
         run: |
           kubectl set image deployment/barber-admin-deployment \
             barber-admin-container=ruanwill/barber-admin:${{ github.sha }} \
