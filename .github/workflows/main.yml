@@ -62,6 +62,11 @@ jobs:
           # Referenciar o arquivo no config
           echo "key_file=~/.oci/private_key.pem" >> ~/.oci/config
 
+      - name: Configure Kubectl
+        uses: oracle-actions/configure-kubectl-oke@v1.5.0
+        with:
+          cluster: ${{ secrets.OKE_CLUSTER_OCID }}
+
       - name: Update Deployment with new image
         run: |
           kubectl set image deployment/barber-admin-deployment \
