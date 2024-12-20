@@ -54,6 +54,10 @@ jobs:
           echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" > ~/.oci/private_key.pem
           chmod 600 ~/.oci/private_key.pem
 
+      - name: OCI CLI config file permissions
+        run: |
+          chmod 600 ~/.oci/config
+
       - name: Configure OCI CLI
         run: |
           mkdir -p ~/.oci
@@ -64,9 +68,9 @@ jobs:
           echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
           echo "key_file=~/.oci/private_key.pem" >> ~/.oci/config
 
-      - name: OCI CLI config file permissions
+      - name: Test OCI CLI authentication
         run: |
-          chmod 600 ~/.oci/config  # Correção de permissões do arquivo de configuração OCI
+          oci iam user get --user-id ${OCI_USER_OCID}
 
       - name: Configure kubectl
         uses: tale/kubectl-action@v1
