@@ -54,6 +54,10 @@ jobs:
           echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" > ~/.oci/private_key.pem
           chmod 600 ~/.oci/private_key.pem
 
+      - name: OCI CLI config file permissions
+        run: |
+          chmod 600 ~/.oci/config
+
       - name: Configure OCI CLI
         run: |
           mkdir -p ~/.oci
