@@ -12,59 +12,41 @@ env:
   NAMESPACE: production
 
 jobs:
-  ci:
+  cd:
     runs-on: ubuntu-latest
+    name: Set up OCI Private Key from Secret and Install Kubectl
 
     steps:
+      # Checkout the code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v2
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      - name: Build the project using Maven
-        run: mvn -f ./admin/pom.xml clean install -DskipTests
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_USER }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-
-      - name: Set up Docker Buildx
+      # Create OCI directory and add the private key
+      - name: Set up OCI Private Key from Secret
         run: |
-          docker buildx create --use
-          docker buildx inspect --bootstrap
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" > ~/.oci/private_key.pem
+          chmod 600 ~/.oci/private_key.pem
 
-      - name: Build Docker image for multiple architectures
-        uses: docker/build-push-action@v5
-        with:
-          context: ./admin
-          push: true
-          file: ./admin/Dockerfile
-          tags: ${{ env.IMAGE_NAME }}
-          platforms: linux/amd64,linux/arm64
+      # Install Kubectl for OKE
+      - name: Install Kubectl for OKE
+        env:
+          OCI_CLI_USER: ${{ secrets.OCI_USER_OCID }}
+          OCI_CLI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
+          OCI_CLI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+          OCI_CLI_KEY_FILE: ~/.oci/private_key.pem
+          OCI_CLI_REGION: ${{ secrets.OCI_REGION }}
+        run: |
+          oci --profile default iam user get --user-id $OCI_CLI_USER
 
-  cd:
-    runs-on: ubuntu-latest
-    name: Install Kubectl for OKE
-    env:
-      OCI_CLI_USER: ${{ secrets.OCI_USER_OCID }}
-      OCI_CLI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
-      OCI_CLI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
-      OCI_CLI_KEY_CONTENT: ${{ secrets.OCI_PRIVATE_KEY_FILE }}
-      OCI_CLI_REGION: ${{ secrets.OCI_REGION }}
-
-    steps:
+      # Configure Kubectl for OKE
       - name: Configure Kubectl
         uses: oracle-actions/configure-kubectl-oke@v1.5.0
         id: test-configure-kubectl-oke-action
         with:
           cluster: ${{ secrets.OKE_OCID }}
 
+      # Update Deployment with new Docker image
       - name: Update Deployment with new image
         run: |
           kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} \
