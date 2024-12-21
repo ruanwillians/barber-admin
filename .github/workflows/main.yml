@@ -1,12 +1,18 @@
-name: CI/CD
+name: Deploy to OKE OCI
 
 on:
   push:
     branches:
-      - "main"
+      - main
+
+env:
+  IMAGE_NAME: ruanwill/barber-admin:${{ github.sha }}
+  DEPLOYMENT_NAME: barber-admin-deployment
+  CONTAINER_NAME: barber-admin-container
+  NAMESPACE: production
 
 jobs:
-  CI_CD:
+  ci_cd:
     runs-on: ubuntu-latest
 
     steps:
@@ -39,7 +45,7 @@ jobs:
           context: ./admin
           push: true
           file: ./admin/Dockerfile
-          tags: ruanwill/barber-admin:${{ github.sha }}
+          tags: ${{ env.IMAGE_NAME }}
           platforms: linux/amd64,linux/arm64
 
       - name: Install OCI CLI
@@ -54,13 +60,8 @@ jobs:
           echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" > ~/.oci/private_key.pem
           chmod 600 ~/.oci/private_key.pem
 
-      - name: OCI CLI config file permissions
-        run: |
-          chmod 600 ~/.oci/config
-
       - name: Configure OCI CLI
         run: |
-          mkdir -p ~/.oci
           echo "[DEFAULT]" > ~/.oci/config
           echo "user=${{ secrets.OCI_USER_OCID }}" >> ~/.oci/config
           echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
@@ -69,17 +70,17 @@ jobs:
           echo "key_file=~/.oci/private_key.pem" >> ~/.oci/config
 
       - name: Test OCI CLI authentication
-        run: |
-          oci iam user get --user-id ${OCI_USER_OCID}
+        run: oci iam user get --user-id ${{ secrets.OCI_USER_OCID }}
 
       - name: Configure kubectl
-        uses: tale/kubectl-action@v1
-        with:
-          base64-kube-config: ${{ secrets.KUBECONFIG_CONTENT }}
-          kubectl-version: v1.22.0
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_CONTENT }}" | base64 --decode > ~/.kube/config
+          export KUBECONFIG=~/.kube/config
 
       - name: Update Deployment with new image
         run: |
-          kubectl set image deployment/barber-admin-deployment \
-            barber-admin-container=ruanwill/barber-admin:${{ github.sha }} \
-            -n production
+          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} \
+            ${{ env.CONTAINER_NAME }}=${{ env.IMAGE_NAME }} \
+            -n ${{ env.NAMESPACE }}
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }}
