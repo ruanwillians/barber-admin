@@ -57,9 +57,8 @@ jobs:
           echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" >> ~/.oci/config
           echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
 
-          # Decode and decrypt the private key
-          echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" | base64 --decode > ~/.oci/key.enc
-          openssl rsa -in ~/.oci/key.enc -out ~/.oci/key.pem -passin pass:${{ secrets.OCI_PASSPHRASE }}
+          # Directly decode the base64 encoded private key and write it to the file
+          echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" | base64 --decode > ~/.oci/key.pem
           chmod 600 ~/.oci/key.pem
 
           echo "key_file=~/.oci/key.pem" >> ~/.oci/config
@@ -80,7 +79,7 @@ jobs:
       - name: "Download the KUBECONFIG"
         run: |
           mkdir -p ~/.kube
-          oci ce cluster create-kubeconfig --cluster-id ${{ secrets.OKE_OCID }} --file ~/.kube/config --region ${{ secrets.OCI_REGION }} --token-version 2.0.0
+          oci ce cluster create-kubeconfig --cluster-id ${{ secrets.OKE_OCID }} --file ~/.kube/config --region ${{ secrets.OCI_REGION }} --token-version 2.0.0 
           export KUBECONFIG=~/.kube/config
 
       - name: Configure kubectl
