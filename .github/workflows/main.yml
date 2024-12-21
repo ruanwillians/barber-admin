@@ -22,11 +22,25 @@ jobs:
         uses: actions/checkout@v4
 
       # Create OCI directory and add the private key
-      - name: Set up OCI Private Key from Secret
+      - name: Set up OCI Private Key from Secret and Decrypt
         run: |
           mkdir -p ~/.oci
+          # Store the private key content into a file
           echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" > ~/.oci/private_key.pem
-          chmod 600 ~/.oci/private_key.pem
+          # Decrypt the private key using the passphrase stored in secrets
+          echo "${{ secrets.OCI_PASSPHRASE }}" | openssl rsa -in ~/.oci/private_key.pem -out ~/.oci/decrypted_private_key.pem
+          chmod 600 ~/.oci/decrypted_private_key.pem
+
+      # Install OCI CLI
+      - name: Install OCI CLI
+        run: |
+          # Update apt and install dependencies
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          # Install the OCI CLI using pip
+          pip3 install oci-cli
+          # Verify the OCI CLI installation
+          oci --version
 
       # Install Kubectl for OKE
       - name: Install Kubectl for OKE
@@ -34,9 +48,10 @@ jobs:
           OCI_CLI_USER: ${{ secrets.OCI_USER_OCID }}
           OCI_CLI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
           OCI_CLI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
-          OCI_CLI_KEY_FILE: ~/.oci/private_key.pem
+          OCI_CLI_KEY_FILE: ~/.oci/decrypted_private_key.pem
           OCI_CLI_REGION: ${{ secrets.OCI_REGION }}
         run: |
+          # Test if OCI CLI works
           oci --profile default iam user get --user-id $OCI_CLI_USER
 
       # Configure Kubectl for OKE
