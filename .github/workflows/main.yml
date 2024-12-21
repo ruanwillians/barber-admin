@@ -48,29 +48,40 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}
           platforms: linux/amd64,linux/arm64
 
-      - name: Install OCI CLI
+      - name: "Write Config & Key Files"
         run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip
-          pip3 install oci-cli
-
-      - name: Set up OCI Private Key from Secret
-        run: |
-          mkdir -p ~/.oci  
-          echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" > ~/.oci/private_key.pem
-          chmod 600 ~/.oci/private_key.pem
-
-      - name: Configure OCI CLI
-        run: |
-          echo "[DEFAULT]" > ~/.oci/config
+          mkdir -p ~/.oci
+          echo "[DEFAULT]" >> ~/.oci/config
           echo "user=${{ secrets.OCI_USER_OCID }}" >> ~/.oci/config
           echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
           echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" >> ~/.oci/config
           echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
-          echo "key_file=~/.oci/private_key.pem" >> ~/.oci/config
 
-      - name: Test OCI CLI authentication
-        run: oci iam user get --user-id ${{ secrets.OCI_USER_OCID }}
+          # Decode and decrypt the private key
+          echo "${{ secrets.OCI_PRIVATE_KEY_FILE }}" | base64 --decode > ~/.oci/key.enc
+          openssl rsa -in ~/.oci/key.enc -out ~/.oci/key.pem -passin pass:${{ secrets.OCI_PASSPHRASE }}
+          chmod 600 ~/.oci/key.pem
+
+          echo "key_file=~/.oci/key.pem" >> ~/.oci/config
+
+      - name: "Install OCI CLI"
+        run: |
+          curl -L -O https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
+          chmod +x install.sh
+          ./install.sh --accept-all-defaults
+          echo "::add-path::/home/runner/bin"
+          exec -l $SHELL
+
+      - name: "Fix Config File Permissions"
+        run: |
+          oci setup repair-file-permissions --file ~/.oci/key.pem
+          oci setup repair-file-permissions --file ~/.oci/config
+
+      - name: "Download the KUBECONFIG"
+        run: |
+          mkdir -p ~/.kube
+          oci ce cluster create-kubeconfig --cluster-id ${{ secrets.OKE_OCID }} --file ~/.kube/config --region ${{ secrets.OCI_REGION }} --token-version 2.0.0
+          export KUBECONFIG=~/.kube/config
 
       - name: Configure kubectl
         run: |
