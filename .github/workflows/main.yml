@@ -52,7 +52,7 @@ jobs:
         run: |
           cd production/barber-admin
           # Modificar o arquivo YAML para a nova tag do Docker
-          sed -i "s|ruanwill/barber-admin:.*|ruanwill/barber-admin:${{ github.sha }}|" deployment.yaml
+          sed -i "s|ruanwill/barber-admin:.*|ruanwill/barber-admin:${{ github.sha }}|" admin-deployment.yaml
           # Caso tenha outros arquivos YAML ou ajustes a serem feitos, adicione aqui
 
       - name: Commit and push changes to k8s-barber repo
