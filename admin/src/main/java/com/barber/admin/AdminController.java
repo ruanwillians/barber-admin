@@ -8,6 +8,6 @@ public class AdminController {
 
     @GetMapping("/")
     public String getAdminPage() {
-        return "health api argo cd";
+        return "health api";
     }
 }
