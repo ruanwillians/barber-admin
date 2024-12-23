@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ruanwillians/k8s-barber
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PAT_TOKEN }}
 
       - name: Update YAML files in k8s-barber
         run: |
@@ -62,6 +62,3 @@ jobs:
           git add .
           git commit -m "Update barber-admin image tag to ${{ github.sha }}"
           git push origin main  # Push para o repositório k8s-barber
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Usando o token do GitHub Actions para autenticação no repositório
-
