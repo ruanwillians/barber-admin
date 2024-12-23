@@ -3,7 +3,7 @@ name: CI/CD
 on:
   push:
     branches:
-      - 'main'
+      - "main"
 
 jobs:
   CI_CD:
@@ -16,8 +16,8 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Build the project using Maven
         run: mvn -f ./admin/pom.xml clean install -DskipTests
@@ -25,7 +25,7 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_HUB_USER}}
+          username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Set up Docker Buildx
@@ -40,4 +40,28 @@ jobs:
           push: true
           file: ./admin/Dockerfile
           tags: ruanwill/barber-admin:${{ github.sha }}
-          platforms: linux/amd64,linux/arm64  # Adiciona suporte para múltiplas arquiteturas
+          platforms: linux/amd64,linux/arm64
+
+      - name: Checkout k8s-barber repository
+        uses: actions/checkout@v4
+        with:
+          repository: ruanwillians/k8s-barber
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update YAML files in k8s-barber
+        run: |
+          cd production/barber-admin
+          # Modificar o arquivo YAML para a nova tag do Docker
+          sed -i "s|ruanwill/barber-admin:.*|ruanwill/barber-admin:${{ github.sha }}|" deployment.yaml
+          # Caso tenha outros arquivos YAML ou ajustes a serem feitos, adicione aqui
+
+      - name: Commit and push changes to k8s-barber repo
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Update barber-admin image tag to ${{ github.sha }}"
+          git push origin main  # Push para o repositório k8s-barber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Usando o token do GitHub Actions para autenticação no repositório
+
