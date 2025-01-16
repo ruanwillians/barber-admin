@@ -42,7 +42,7 @@ public class UserService implements IUserService {
             UserPresenter userExist = userRepository.findUserByEmail(connection, userEntity.getEmail());
 
             if(userExist != null) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Usuário com o email: " + userEntity.getEmail() +  "já existe");
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Usuário com o email: " + userEntity.getEmail() +  "já cadastrado");
             }
 
             return userRepository.saveUser(connection,userEntity);
